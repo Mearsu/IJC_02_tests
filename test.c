@@ -134,10 +134,12 @@ void tail_teardown() {
 
 
 
+// Testing invalid line numbers, should fail in all cases
 void tail_line_num_fail(void **state) {
   signal(SIGSEGV, signal_catcher);//to catch segfault
   UNUSED(state);
-  char *args[7][4] = {//different argument combinations
+  create_file("infile", 1, 0);
+  char *args[9][4] = {//different argument combinations
   {"./tail", "-n", "10a"},
   {"./tail", "-n", "a10"},
   {"./tail", "-n", "a"},
@@ -145,6 +147,8 @@ void tail_line_num_fail(void **state) {
   {"./tail", "-n10a"},
   {"./tail", "-na"},
   {"./tail", "-n"},
+  {"./tail", "-n", "infile"},
+  {"./tail", "-n", "hope_this_file_doesnt_exist"},
   };
   g_tail_current_args = malloc(256);
 
@@ -171,6 +175,8 @@ void tail_line_num_fail(void **state) {
   remove("stdout");
 }
 
+//testing output when running on single file with default number (10)
+//expects last 10 lines from infile to be outputted to stdout, and stderr to remain empty
 void tail_single_file(void **state) {
   signal(SIGSEGV, signal_catcher); // to catch segfault
   UNUSED(state);
@@ -191,7 +197,7 @@ void tail_single_file(void **state) {
   remove("infile");
 }
 
-
+// testing reading from stdin, same as with single file, should read from stdin
 void tail_no_file(void** state){
   signal(SIGSEGV, signal_catcher);//to catch segfault
   UNUSED(state);
@@ -214,6 +220,7 @@ void tail_no_file(void** state){
 }
 
 
+// expect last x lines from stdin to apear on stdout, stderr to remain empty
 void tail_no_file_len_arg(void** state){
   signal(SIGSEGV, signal_catcher);//to catch segfault
   UNUSED(state);
