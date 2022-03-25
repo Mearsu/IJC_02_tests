@@ -50,12 +50,15 @@
     fclose(sout);                                                              \
   } while (0)
 
-void create_file(const char* name, int num_lines){
+//name -filename to create-iin
+//num_lines - how many lines to create
+//offset - from which line start counting
+void create_file(const char* name, int num_lines, int offset){
   FILE* f = fopen(name, "w");
   if(f == NULL){
     fail_msg("Failed to open file \"infile\"");
   }
-  for(int i = 0; i < num_lines; i++){
+  for(int i = offset; i < num_lines + offset; i++){
     fprintf(f, "Line%d\n", i);
   }
   fclose(f);
@@ -79,23 +82,28 @@ static void signal_catcher(int signo) {
 // is how many lines were dropped by tail e.g. when raeding file with 15 lines
 // using tail with no arguments, offset should be 5 because only last 10 lines
 // are outputted
-void check_stdout_lines(int num, int out_offset) {
-  FILE *sout = fopen("stdout", "r");
-  char *line_buff = NULL;
-  size_t line_len = 0;
-  char test_buff[20];
-  for(int i = 0; i < num; i++){
-    if(getline(&line_buff, &line_len, sout) == -1)
-      fail_msg("tail outputed only %d lines when running with %s", i, g_tail_current_args);
-    sprintf(test_buff, "Line%d\n", i +  out_offset);
-    if(strcmp(line_buff, test_buff) != 0)
-      fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n running with %s", i, line_buff, test_buff, g_tail_current_args);
-  }
-  if(getline(&line_buff, &line_len, sout) != -1)
-      fail_msg("tail outputed more than %d line when running with %s", num, g_tail_current_args);
-  free(line_buff);
-  fclose(sout);
-}
+#define check_stdout_lines(num, out_offset)                                    \
+  do {                                                                         \
+    FILE *sout = fopen("stdout", "r");                                         \
+    char *line_buff = NULL;                                                    \
+    size_t line_len = 0;                                                       \
+    char test_buff[20];                                                        \
+    for (int i = 0; i < num; i++) {                                            \
+      if (getline(&line_buff, &line_len, sout) == -1)                          \
+        fail_msg("tail outputed only %d lines when running with %s", i,        \
+                 g_tail_current_args);                                         \
+      sprintf(test_buff, "Line%d\n", i + out_offset);                          \
+      if (strcmp(line_buff, test_buff) != 0)                                   \
+        fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n "   \
+                 "running with %s",                                            \
+                 i, line_buff, test_buff, g_tail_current_args);                \
+    }                                                                          \
+    if (getline(&line_buff, &line_len, sout) != -1)                            \
+      fail_msg("tail outputed more than %d line when running with %s", num,    \
+               g_tail_current_args);                                           \
+    free(line_buff);                                                           \
+    fclose(sout);                                                              \
+  } while (0)
 
 void htab_init_test(void **state) {
   UNUSED(state);
@@ -140,7 +148,7 @@ void tail_line_num_fail(void **state) {
   };
   g_tail_current_args = malloc(256);
 
-  for (int i = 0; i < sizeof(args) / sizeof(args)[0]; i++) {
+  for (size_t i = 0; i < sizeof(args) / sizeof(args)[0]; i++) {
     strcpy(g_tail_current_args, args[i][1]);//copy second argument for signal_catcher
     if (args[i][2] != NULL) {//copy third argument if exists
       strcat(g_tail_current_args, " ");
@@ -167,7 +175,7 @@ void tail_single_file(void **state) {
   signal(SIGSEGV, signal_catcher); // to catch segfault
   UNUSED(state);
   // generate input file
-  create_file("infile", 11);
+  create_file("infile", 11, 0);
 
   char *args[3] = {"./tail", "infile"};  //< arguments for tail
   g_tail_current_args = "./tail infile"; // arguements for catching segfault
@@ -187,7 +195,7 @@ void tail_single_file(void **state) {
 void tail_no_file(void** state){
   signal(SIGSEGV, signal_catcher);//to catch segfault
   UNUSED(state);
-  create_file("infile", 15);
+  create_file("infile", 15, 0);
 
   char *args[] = {"./tail", NULL};  //< arguments for tail
   g_tail_current_args = "./tail";
@@ -209,7 +217,7 @@ void tail_no_file(void** state){
 void tail_no_file_len_arg(void** state){
   signal(SIGSEGV, signal_catcher);//to catch segfault
   UNUSED(state);
-  create_file("infile", 11);
+  create_file("infile", 11, 0);
 
   char *args[] = {"./tail", "-n3", NULL};  //< arguments for tail
   g_tail_current_args = "./tail -n3";
@@ -226,8 +234,135 @@ void tail_no_file_len_arg(void** state){
   remove("stderr");
 }
 
+
+//testing with -0 as argument, should not output anything
+void tail_test_n0(void** state){
+  signal(SIGSEGV, signal_catcher);//to catch segfault
+  UNUSED(state);
+  create_file("infile", 5, 0);
+  create_file("infile1", 5, 0);
+
+  {
+  char *args[] = {"./tail", "-n0", "infile", NULL};  //< arguments for tail
+  g_tail_current_args = "./tail -n0 infile";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_teardown();
+  CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n0 ...\"");
+  CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running with \"./tail -n0 ...\"");
+
+  char *args_[] = {"./tail", "-n", "0", "infile", NULL};  //< arguments for tail
+  g_tail_current_args = "./tail -n 0 infile";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args_) / sizeof(args_[0]), args_);
+  tail_teardown();
+  CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 0 ...\"");
+  CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running with \"./tail -n 0 ...\"");
+  }
+
+  //testing if tail outputs nothing when passing multiple files with -n0
+  char *args[] = {"./tail", "-n", "0", "infile", "infile1", NULL};  //< arguments for tail
+  g_tail_current_args = "./tail -n0 infile infile1";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_teardown();
+  CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n0 ...\"");
+  CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running with \"./tail -n0 ...\"");
+
+  g_tail_current_args = NULL;
+  remove("infile");
+  remove("infile1");
+  remove("stdout");
+  remove("stderr");
+}
+
 void tail_test_multiple_files(void** state){
   UNUSED(state);
+  create_file("infile1", 15, 0);
+  create_file("infile2", 15, 10);
+
+  char *args[] = {"./tail", "infile1", "infile2", NULL};  //< arguments for tail
+  g_tail_current_args = "./tail infile1 infile2";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_teardown();
+  CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail infile1 infile2\"");
+
+  FILE *sout = fopen("stdout", "r");
+  char *line_buff = NULL;
+  size_t line_len = 0;
+  char test_buff[20];
+
+  const int help_line = __LINE__;
+  //============================================================================
+  //check output when passing multiple files to tail
+  //expected format is
+  //line identifiing file e.g. ==> infile1 <==
+  //output of first file (10 lines)
+  //line identifiing file e.g. ==> infile2 <==
+  //output of second file (10 lines)
+  //============================================================================
+  //first file identifier, e.g. ==> infile1 <==
+  if (getline(&line_buff, &line_len, sout) == -1)
+    fail_msg("Tail didn't output anything when using './tail infile1 infile2'");
+
+//check if tail outputted end of first file
+  for (int i = 0; i < 10; i++) {
+    if (getline(&line_buff, &line_len, sout) == -1)
+      fail_msg("tail outputed only %d lines when running with %s", i,
+               g_tail_current_args);
+    sprintf(test_buff, "Line%d\n", i + 5);
+    if (strcmp(line_buff, test_buff) != 0)
+      fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n "
+               "running with %s",
+               i, line_buff, test_buff, g_tail_current_args);
+  }
+
+  //second file identifier, e.g. ==> infile2 <==
+  if (getline(&line_buff, &line_len, sout) == -1)
+    fail_msg("Taill outputted only one file when passed multiple files");
+
+//check if tail outputted end of second file
+  for (int i = 0; i < 10; i++) {
+    if (getline(&line_buff, &line_len, sout) == -1)
+      fail_msg("tail outputed only %d lines when running with %s, are you including file identifiers? see %s:%d", i,
+               g_tail_current_args, __FILE__, help_line);
+    sprintf(test_buff, "Line%d\n", i + 5 + 10);
+    if (strcmp(line_buff, test_buff) != 0)
+      fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n "
+               "running with %s",
+               i, line_buff, test_buff, g_tail_current_args);
+  }
+  if (getline(&line_buff, &line_len, sout) != -1)
+    fail_msg("Tail outputted more than 2x10 lines from files + 2 file identifiers, see %s:%d", __FILE__, help_line);
+
+  free(line_buff);
+  fclose(sout);
+
+
+  g_tail_current_args = NULL;
+  remove("infile1");
+  remove("infile2");
+  remove("stdout");
+  remove("stderr");
+}
+
+//checking that tail outputs error when file doesn't exist
+void tail_test_invalid_file(void** state){
+  UNUSED(state);//no i'm not anarchist
+
+  remove("infile");//tests would override infile anyway :)
+  char *args[] = {"./tail", "infile", NULL};  //< arguments for tail
+  g_tail_current_args = "./tail <non-existing file>";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_teardown();
+  CHECK_STDERR(== 0, "tail did not output to stderr when running on non-existing file");
+  CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running on non-existing file");
+
+  g_tail_current_args = NULL;
+  remove("stdout");
+  remove("stderr");
 }
 
 int main(void) {
@@ -243,6 +378,9 @@ int main(void) {
       cmocka_unit_test(tail_line_num_fail),
       cmocka_unit_test(tail_no_file),
       cmocka_unit_test(tail_no_file_len_arg),
+      cmocka_unit_test(tail_test_n0),
+      cmocka_unit_test(tail_test_multiple_files),
+      cmocka_unit_test(tail_test_invalid_file),
   };
   #endif
 
