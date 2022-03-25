@@ -68,6 +68,7 @@ void create_file(const char* name, int num_lines, int offset){
 static char *g_tail_current_args = NULL;
 
 void tail_teardown();
+
 //used to catch segfault from tail
 static void signal_catcher(int signo) {
   tail_teardown();
@@ -105,6 +106,7 @@ static void signal_catcher(int signo) {
     fclose(sout);                                                              \
   } while (0)
 
+#if TEST_HTAB
 void htab_init_test(void **state) {
   UNUSED(state);
   htab_t *tab = htab_init(10);
@@ -115,6 +117,7 @@ void htab_init_test(void **state) {
   assert_int_equal(tab->arr_size, 10);
   htab_free(tab);
 }
+#endif
 
 // note these cannot be test setup/teardowns, it would redirect test results as
 // well redirects stdout and stderr to files called "stdout" and "stderr" in
@@ -134,6 +137,7 @@ void tail_teardown() {
 
 
 
+#if TEST_TAIL
 // Testing invalid line numbers, should fail in all cases
 void tail_line_num_fail(void **state) {
   signal(SIGSEGV, signal_catcher);//to catch segfault
@@ -371,6 +375,7 @@ void tail_test_invalid_file(void** state){
   remove("stdout");
   remove("stderr");
 }
+#endif
 
 int main(void) {
   #if TEST_HTAB
