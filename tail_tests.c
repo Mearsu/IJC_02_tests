@@ -215,6 +215,24 @@ void tail_no_file_len_arg(void** state){
   remove("stderr");
 }
 
+//test output with -n 1 might cause problems to some implementations
+void tail_test_n1(void** state){
+  signal(SIGSEGV, signal_catcher);
+  UNUSED(state);
+  create_file("infile", 5, 0);
+  char* args[] = {"./tail", "-n", "1", "infile", NULL};
+  g_tail_current_args = "./tail -n 1 infile";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_teardown();
+  CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 1 ...\"");
+  
+  check_stdout_lines(1, 4);
+  g_tail_current_args = NULL;
+  remove("infile");
+  remove("stdout");
+  remove("stderr");
+}
 
 //testing with -0 as argument, should not output anything
 void tail_test_n0(void** state){
@@ -342,6 +360,25 @@ void tail_test_invalid_file(void** state){
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running on non-existing file");
 
   g_tail_current_args = NULL;
+  remove("stdout");
+  remove("stderr");
+}
+
+//tests what happens when multiple -n arguments are passed, last one should be used
+void tail_test_multiple_ns(void** state){
+  signal(SIGSEGV, signal_catcher);
+  UNUSED(state);
+  create_file("infile", 10, 0);
+  char* args[] = {"./tail", "-n", "5", "-n2", "infile", NULL};
+  g_tail_current_args = "./tail -n 5 -n2 infile";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_teardown();
+  CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 1 ...\"");
+  
+  check_stdout_lines(2, 8);
+  g_tail_current_args = NULL;
+  remove("infile");
   remove("stdout");
   remove("stderr");
 }

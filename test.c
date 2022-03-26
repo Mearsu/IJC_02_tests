@@ -51,9 +51,11 @@ int main(void) {
       cmocka_unit_test(tail_line_num_fail),
       cmocka_unit_test(tail_no_file),
       cmocka_unit_test(tail_no_file_len_arg),
+      cmocka_unit_test(tail_test_n1),
       cmocka_unit_test(tail_test_n0),
       cmocka_unit_test(tail_test_multiple_files),
       cmocka_unit_test(tail_test_invalid_file),
+      cmocka_unit_test(tail_test_multiple_ns),
   };
   #endif
 
