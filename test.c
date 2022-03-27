@@ -56,6 +56,7 @@ int main(void) {
       cmocka_unit_test(tail_test_multiple_files),
       cmocka_unit_test(tail_test_invalid_file),
       cmocka_unit_test(tail_test_multiple_ns),
+      cmocka_unit_test(tail_test_dir),
   };
   #endif
 
@@ -66,7 +67,7 @@ int failed = 0;
   failed = cmocka_run_group_tests(htab_tests, NULL, NULL);
 #endif
 #if TEST_TAIL
-  failed += cmocka_run_group_tests(tail_tests, NULL, NULL);
+  failed += cmocka_run_group_tests(tail_tests, NULL, tail_test_teardown);
 #endif
 
   return failed;

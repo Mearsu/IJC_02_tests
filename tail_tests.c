@@ -144,9 +144,6 @@ void tail_line_num_fail(void **state) {
 
   }
   free(g_tail_current_args);
-  g_tail_current_args = NULL;
-  remove("stderr");
-  remove("stdout");
 }
 
 //testing output when running on single file with default number (10)
@@ -165,10 +162,6 @@ void tail_single_file(void **state) {
 
   CHECK_STDERR(!= 0, "tail outputted error when passed file \"infile\" as argument");
 
-  g_tail_current_args = NULL;
-  remove("stderr");
-  remove("stdout");
-  remove("infile");
 }
 
 // testing reading from stdin, same as with single file, should read from stdin
@@ -187,10 +180,6 @@ void tail_no_file(void** state){
 
   check_stdout_lines(10, 5);
 
-  g_tail_current_args = NULL;
-  remove("infile");
-  remove("stdout");
-  remove("stderr");
 }
 
 
@@ -209,10 +198,6 @@ void tail_no_file_len_arg(void** state){
   CHECK_STDERR(!= 0, "Tail should not output to stderr, when receiving \"-n3\" as arguments");
   check_stdout_lines(3, 8);
 
-  g_tail_current_args = NULL;
-  remove("infile");
-  remove("stdout");
-  remove("stderr");
 }
 
 //test output with -n 1 might cause problems to some implementations
@@ -228,10 +213,6 @@ void tail_test_n1(void** state){
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 1 ...\"");
   
   check_stdout_lines(1, 4);
-  g_tail_current_args = NULL;
-  remove("infile");
-  remove("stdout");
-  remove("stderr");
 }
 
 //testing with -0 as argument, should not output anything
@@ -267,12 +248,6 @@ void tail_test_n0(void** state){
   tail_teardown();
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n0 ...\"");
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running with \"./tail -n0 ...\"");
-
-  g_tail_current_args = NULL;
-  remove("infile");
-  remove("infile1");
-  remove("stdout");
-  remove("stderr");
 }
 
 void tail_test_multiple_files(void** state){
@@ -337,13 +312,6 @@ void tail_test_multiple_files(void** state){
 
   free(line_buff);
   fclose(sout);
-
-
-  g_tail_current_args = NULL;
-  remove("infile1");
-  remove("infile2");
-  remove("stdout");
-  remove("stderr");
 }
 
 //checking that tail outputs error when file doesn't exist
@@ -359,9 +327,6 @@ void tail_test_invalid_file(void** state){
   CHECK_STDERR(== 0, "tail did not output to stderr when running on non-existing file");
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running on non-existing file");
 
-  g_tail_current_args = NULL;
-  remove("stdout");
-  remove("stderr");
 }
 
 //tests what happens when multiple -n arguments are passed, last one should be used
@@ -377,8 +342,27 @@ void tail_test_multiple_ns(void** state){
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 1 ...\"");
   
   check_stdout_lines(2, 8);
+}
+
+void tail_test_dir(void ** state){
+  signal(SIGSEGV, signal_catcher);
+  UNUSED(state);
+  char* args[] = {"./tail", ".", NULL};
+  g_tail_current_args = "./tail .";
+  tail_setup("/dev/null");
+  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_teardown();
+  CHECK_STDERR(== 0, "tail did not output to stderr when running on directory");
+  CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running on directory");
+}
+
+int tail_test_teardown(void ** state){
+  UNUSED(state);
   g_tail_current_args = NULL;
   remove("infile");
+  remove("infile1");
+  remove("infile2");
   remove("stdout");
   remove("stderr");
+  return 0;
 }
