@@ -344,6 +344,7 @@ void tail_test_multiple_ns(void** state){
   check_stdout_lines(2, 8);
 }
 
+// try running tail on directory
 void tail_test_dir(void ** state){
   signal(SIGSEGV, signal_catcher);
   UNUSED(state);

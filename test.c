@@ -1,6 +1,10 @@
+#define _POSIX_C_SOURCE 200809L
+#include "stdio.h"
+#undef _POSIX_C_SOURCE
 #define main tail_main
 #include "tail.c"
 #undef main
+
 
 #include "htab.h"
 #include "htab_impl.h"
