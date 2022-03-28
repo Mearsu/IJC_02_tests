@@ -5,7 +5,6 @@
 #include "tail.c"
 #undef main
 
-
 #include "htab.h"
 #include "htab_impl.h"
 
@@ -13,6 +12,8 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <cmocka.h>
+
 
 // change to 0 to disable tests for tail/hash table
 #define TEST_HTAB 1
@@ -28,7 +29,6 @@
 #define OUT_REDIRECT "/dev/tty"
 #endif
 
-#include <cmocka.h>
 
 #define UNUSED(X) (void)(X)
 
@@ -36,7 +36,6 @@
 #if TEST_HTAB
 #include "hash_tab_tests.c"
 #endif
-
 
 #if TEST_TAIL
 #include "tail_tests.c"
@@ -46,6 +45,9 @@ int main(void) {
   #if TEST_HTAB
   const struct CMUnitTest htab_tests[] = {
       cmocka_unit_test(htab_init_test),
+      cmocka_unit_test(htab_bucket_count_test),
+      cmocka_unit_test(test_hash_function_test),
+      cmocka_unit_test(test_htab_size),
   };
   #endif
 
@@ -76,3 +78,4 @@ int failed = 0;
 
   return failed;
 }
+
