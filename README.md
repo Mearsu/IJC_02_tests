@@ -16,6 +16,8 @@
 
 ## použití
 
+Stačí spustit `curl https://raw.githubusercontent.com/Mearsu/IJC_02_tests/master/setup.sh | sh` ve složce, s projektem, script stáhne repozitář do `../IJC_02_tests`, linkne potřebné soubory a přidá nedokončený cíl do Makefile, nebo můžete manuálně:
+
 ja to používám tak, že mám adresáře `IJC/02` a `IJC/02_tests` a v `02` linknutý všechny .c soubory z `02_tests` pomocí `ln -s ../02_tests/*.c  .` a v makefile v adresáři `02` 
 ```
 test: $(HTAB_OBJS) test.o
