@@ -2,6 +2,7 @@
 
 ## Důležité info
 
+- na testech stále pracuju, takže nezapomeňte občas na `git pull`, pokud máte pocit, že je někde v testech chyba/nejdou přeložit, stačí otevřít github issue nebo mi napsat na discordu
 - Pokud chybová hláška nestačí, koukněte se do toho souboru na řádek, kde testy selhávají, někde je, jinde dopíšu, co přesně se testuje a očekává
 
 - Byl jsem línej, když jsem to dělal, test vytvoří a smaže několik souborů v adresáři, kde je spuštěný - soubory "stdout", "stderr", "infile" a možná další
@@ -15,7 +16,13 @@
 
 ## použití
 
-Testy jde použít např klonováním repozitáře do adresáře vedle úkolu a symlinknutím souboru test.c
-např.:
-`ln -s ../IJC_02_tests/test.c .`
-a přidáním cíle do makefile
+ja to používám tak, že mám adresáře `IJC/02` a `IJC/02_tests` a v `02` linknutý všechny .c soubory z `02_tests` pomocí `ln -s ../02_tests/*.c  .` a v makefile v adresáři `02` 
+```
+test: $(HTAB_OBJS) test.o
+  $(CC) $(LDFLAGS) -lcmocka $^ -o $@
+```
+`HTAB_OBJS` obsahuje všechny .o soubory pro hash table
+
+test.o nesmí být linkován s tail.o ani jiným souborem, který obsahuje funkci main.
+test.c přidává tail.c pomocí #include aby mohl změnit jméno funkce main v testech viz. tail.c:4-6
+
