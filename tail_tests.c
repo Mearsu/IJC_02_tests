@@ -48,7 +48,7 @@ void create_file(const char* name, int num_lines, int offset){
     fail_msg("Failed to open file \"infile\"");
   }
   for(int i = offset; i < num_lines + offset; i++){
-    fprintf(f, "Line%d\n", i);
+    fprintf(f, "%cLine%d\n",255, i);
   }
   fclose(f);
 }
@@ -78,11 +78,11 @@ static void signal_catcher(int signo) {
     char test_buff[20];                                                        \
     for (int i = 0; i < num; i++) {                                            \
       if (getline(&line_buff, &line_len, sout) == -1)                          \
-        fail_msg("tail outputed only %d lines when running with %s", i,        \
+        fail_msg("tail outputed only %d lines when running with %s\nNOTE: lines contain 255 bit at beginning\n", i,        \
                  g_tail_current_args);                                         \
-      sprintf(test_buff, "Line%d\n", i + out_offset);                          \
+      sprintf(test_buff, "%cLine%d\n",255, i + out_offset);                          \
       if (strcmp(line_buff, test_buff) != 0)                                   \
-        fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n "   \
+        fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n NOTE: lines contain 255 bit at beginning\n"   \
                  "running with %s",                                            \
                  i, line_buff, test_buff, g_tail_current_args);                \
     }                                                                          \
@@ -285,7 +285,7 @@ void tail_test_multiple_files(void** state){
     if (getline(&line_buff, &line_len, sout) == -1)
       fail_msg("tail outputed only %d lines when running with %s", i,
                g_tail_current_args);
-    sprintf(test_buff, "Line%d\n", i + 5);
+    sprintf(test_buff, "%cLine%d\n",255, i + 5);
     if (strcmp(line_buff, test_buff) != 0)
       fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n "
                "running with %s",
@@ -301,7 +301,7 @@ void tail_test_multiple_files(void** state){
     if (getline(&line_buff, &line_len, sout) == -1)
       fail_msg("tail outputed only %d lines when running with %s, are you including file identifiers? see %s:%d", i,
                g_tail_current_args, __FILE__, help_line);
-    sprintf(test_buff, "Line%d\n", i + 5 + 10);
+    sprintf(test_buff, "%cLine%d\n",255, i + 5 + 10);
     if (strcmp(line_buff, test_buff) != 0)
       fail_msg("Line %d outputted by tail contains \"%s\", expected %s\n "
                "running with %s",
@@ -367,3 +367,4 @@ int tail_test_teardown(void ** state){
   remove("stderr");
   return 0;
 }
+

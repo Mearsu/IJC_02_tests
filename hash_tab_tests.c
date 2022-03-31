@@ -144,6 +144,32 @@ void test_htab_resize(void** state){
   g_htab_fails_msg = "running htab_resize(tab, 0)";
   htab_t *tab = htab_init(1);
   htab_resize(tab, 0);
+  g_htab_fails_msg = NULL;
+}
+
+void test_htab_erase(void** state){
+  UNUSED(state);  
+  signal(SIGSEGV, htab_signal_catcher);
+  
+  //add and remove 2 elements in same and reverse order
+}
+
+void tab_fe_help(htab_pair_t* pair){
+  if(strcmp("aa", pair->key) == 0)
+    assert_int_equal(pair->value, 10);
+  if(strcmp("bb", pair->key) == 0)
+    assert_int_equal(pair->value, 20);
+}
+
+void test_htab_for_each(void**state){
+  UNUSED(state);  
+  signal(SIGSEGV, htab_signal_catcher);
+  htab_t *tab = htab_init(2);
+  htab_lookup_add(tab, "aa")->value = 10;
+  htab_lookup_add(tab, "bb")->value = 20;
+  htab_for_each(tab, tab_fe_help);
+  htab_for_each(tab, tab_fe_help);
+  htab_free(tab);
 }
 
 
