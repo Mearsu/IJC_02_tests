@@ -5,6 +5,7 @@ import threading;
 import queue;
 import multiprocessing;
 
+# WIP!
 # Script for profiling wordcount, wordcount should expect file with words as 
 #first argument, AVG_LEN_MIN as second and AVG_LEN_MAX as third for this script
 # to work
@@ -19,10 +20,13 @@ import multiprocessing;
 
 #Please do not run this on merlin
 
-repeat_time = 5;
+repeat_time = 1;
 mult = 10;
 range_end = 200;
 num_cores = multiprocessing.cpu_count();
+
+init_range = 200
+init_step = 10;
 
 shortest_time = pow(10, 100);
 shortest_min = 1;
@@ -41,6 +45,7 @@ def run_words():
         workLock.acquire();
         if not workQueue.empty():
             data = workQueue.get();
+            print(data)
             workLock.release();
             avg = 0;
             for x in range(0, repeat_time):
@@ -64,48 +69,72 @@ for i in range(0,num_cores):
     ts[i].start();
 
 
-  
-
-
-for i in range(1,range_end + 1):
-    for j in range(1 + i,range_end + i + 1):
+def run_range(max_start, max_stop, min_start, min_stop, step):
+    times = [];
+    for i in range(max_start, max_stop, step):
+        for j in range(max(min_start, i), min_stop, step):
+            workLock.acquire();
+            if workQueue.full():
+                workLock.release();
+                time.sleep(1);
+                j -= 1
+            else:
+                # i - AVG_LEN_MAX, j - AVG_LEN_MIN
+                workQueue.put((i,j))
+                workLock.release();
+                continue
+            timeLock.acquire();
+            if timeQueue.empty():
+                time.sleep(1);
+                timeLock.release();
+                continue;
+            while not timeQueue.empty():
+                data = timeQueue.get();
+                if len(times) < 5:
+                    times.append(data);
+                else:
+                    for k in range(0,5):
+                        if times[k][0] > data[0]:
+                            times[k] = data;
+                            break;
+            timeLock.release();
+    while True:
         workLock.acquire();
-        if workQueue.full():
-            workLock.release();
-            time.sleep(1);
-            j -= 1
-            continue
-        else:
-            workQueue.put((i * mult,j * mult))
-            workLock.release();
         timeLock.acquire();
+        if workQueue.empty() and timeQueue.empty():
+            workLock.release();
+            timeLock.release();
+            return times;
         while not timeQueue.empty():
             data = timeQueue.get();
-            if data[0] < shortest_time:
-                print("new shortest: ", data[0], " MIN: ", data[1][0], " MAX: ", data[1][1]);
-                shortest_time = data[0]
-                shortest_min = data[1][0]
-                shortest_max = data[1][1]
-
+            if len(times) < 5:
+                times.append(data);
+            else:
+                for k in range(0,5):
+                    if times[k][0] > data[0]:
+                        times[k] = data;
+                        break
+        workLock.release();
         timeLock.release();
+        time.sleep(1);
 
-while not tt_exit:
-    workLock.acquire();
-    if workQueue.empty():
-        tt_exit = True;
-    workLock.release();
-    time.sleep(1);
-    timeLock.acquire();
-    while not timeQueue.empty():
-        data = timeQueue.get();
-        if data[0] < shortest_time:
-            print("new shortest: ", data[0], " MIN: ", data[1][0], " MAX: ", data[1][1]);
-            shortest_time = data[0]
-            shortest_min = data[1][0]
-            shortest_max = data[1][1]
-    timeLock.release();
+def run_subranges(data, step):
+    return run_range(
+        int(data[1][0] - step * 2), int(data[1][0] + step * 2),
+        int(data[1][1] - step * 2), int(data[1][1] + step * 2), int(step / 2));
 
-print("finished");
+t = run_range(init_step, init_range,init_step, init_range, init_step);
+print("shortest:")
+print(t);
+run_subranges(t[0], init_step);
+
+    
+
+print("shortest:")
+print(t);
+
+tt_exit = True;
+
 for i in range(0,num_cores):
     ts[i].join();
 
