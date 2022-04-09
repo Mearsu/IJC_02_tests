@@ -94,18 +94,33 @@ void test_htab_insert(void **state) {
   htab_t *tab = htab_init(1);
   if (tab == NULL)
     return;
+
   char str[2];
-  for (int i = 0; i < 26; i++) {
-    str[0] = i + 'a';
-    str[1] = '\0';
+  // holds number of elements that were found after being inserted or failed to
+  // insert (compensation for when malloc fails)
+  int num_found = 0;
+  for (int i = 0; i < 10; i++) {
+
+    str[0] = 'a' + i;
     htab_pair_t *pair = htab_lookup_add(tab, str);
     if (pair)
-      pair->value = 10;
+      pair->value = i;
+    else
+      num_found++;
   }
-  for (int i = 0; i < HTAB_ARR_SIZE(tab); i++) {
-    HTAB_ITEM *item = GET_ARR_PTR(tab, i);
-    // my head hurts
-    // TODO finish
+
+  for (int i = 0; i < 10; i++) {
+    str[0] = 'a' + i;
+    htab_pair_t *pair = htab_find(tab, str);
+    if (pair) {
+      num_found++;
+      pair->value = i;
+      assert_int_equal(htab_find(tab, str)->value, i);
+    }
+  }
+  // not every inserted element was found
+  if (num_found != 10) {
+    fail();
   }
 }
 

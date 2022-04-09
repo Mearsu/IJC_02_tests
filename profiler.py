@@ -21,8 +21,8 @@ import multiprocessing;
 #Please do not run this on merlin
 
 repeat_time = 2;
-init_range = 5000
-init_step = 100;
+init_range = 500
+init_step = 10;
 num_cores = multiprocessing.cpu_count();
 
 tt_exit = False;
@@ -122,7 +122,7 @@ def run_subranges(data, step):
         int(data[1][1] - step * 2), int(data[1][1] + step * 2), int(step / 2));
 
 print("Times: [(time (AVG_LEN_MIN, AVG_LEN_MAX)),...]")
-times = run_range(init_step, init_range,init_step, init_range, init_step);
+times = run_range(1, init_range,init_step, init_range, init_step);
 
 print("shortest(not final):", end="");
 #print(times, end="\r");
