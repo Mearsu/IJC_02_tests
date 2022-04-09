@@ -154,6 +154,8 @@ void test_htab_erase(void** state){
   //add and remove 2 elements in same and reverse order
 }
 
+void empty_func(htab_pair_t* pair){}
+
 void tab_fe_help(htab_pair_t* pair){
   if(strcmp("aa", pair->key) == 0)
     assert_int_equal(pair->value, 10);
@@ -169,6 +171,14 @@ void test_htab_for_each(void**state){
   htab_lookup_add(tab, "bb")->value = 20;
   htab_for_each(tab, tab_fe_help);
   htab_for_each(tab, tab_fe_help);
+
+  signal(SIGSEGV, htab_signal_catcher);
+  g_htab_fails_msg = "running htab_for_each(NULL, func)";
+  htab_for_each(NULL, empty_func);
+  g_htab_fails_msg = "running htab_for_each(tab, NULL)";
+  htab_for_each(tab, NULL);
+  g_htab_fails_msg = NULL;
+
   htab_free(tab);
 }
 
@@ -181,3 +191,26 @@ void test_htab_size(void ** state){
   htab_size(NULL);
 }
 
+void test_htab_sizes(void**state){
+  UNUSED(state);  
+  signal(SIGSEGV, htab_signal_catcher);
+  htab_t *tab = htab_init(2);
+  assert_int_equal(htab_size(tab), 0);
+  htab_lookup_add(tab, "aa")->value = 10;
+  assert_int_equal(htab_size(tab), 1);
+  htab_lookup_add(tab, "bb")->value = 20;
+  assert_int_equal(htab_size(tab), 2);
+  htab_lookup_add(tab, "bb")->value = 20;
+  assert_int_equal(htab_size(tab), 2);
+  htab_for_each(tab, tab_fe_help);
+  htab_for_each(tab, tab_fe_help);
+  htab_free(tab);
+}
+
+void test_htab_free(void** state){
+  UNUSED(state);
+  signal(SIGSEGV, htab_signal_catcher);
+  g_htab_fails_msg = "running htab_free(NULL)";
+  htab_free(NULL);
+  g_htab_fails_msg = NULL;
+}

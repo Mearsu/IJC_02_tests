@@ -50,6 +50,8 @@ int main(void) {
       cmocka_unit_test(test_hash_function_test),
       cmocka_unit_test(test_htab_resize),
       cmocka_unit_test(test_htab_for_each),
+      cmocka_unit_test(test_htab_sizes),
+      cmocka_unit_test(test_htab_free),
   };
   #endif
 
