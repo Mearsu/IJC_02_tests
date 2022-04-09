@@ -113,7 +113,7 @@ void tail_line_num_fail(void **state) {
   signal(SIGSEGV, signal_catcher);//to catch segfault
   UNUSED(state);
   create_file("infile", 1, 0);
-  char *args[9][4] = {//different argument combinations
+  char *args[][4] = {//different argument combinations
   {"./tail", "-n", "10a"},
   {"./tail", "-n", "a10"},
   {"./tail", "-n", "a"},
@@ -126,15 +126,16 @@ void tail_line_num_fail(void **state) {
   };
   g_tail_current_args = malloc(256);
 
-  for (size_t i = 0; i < sizeof(args) / sizeof(args)[0]; i++) {
+  for (size_t i = 0; i < sizeof(args) / sizeof(args[0]); i++) {
     strcpy(g_tail_current_args, args[i][1]);//copy second argument for signal_catcher
     if (args[i][2] != NULL) {//copy third argument if exists
       strcat(g_tail_current_args, " ");
       strcat(g_tail_current_args, args[i][2]);
     }
+    
     //count arguments
     int arg_num = 0;
-    while (args[i][arg_num++] != NULL);
+    while (args[i][arg_num] != NULL) arg_num++;
 
     tail_setup("/dev/null");
     tail_main(arg_num, args[i]);
@@ -173,7 +174,7 @@ void tail_no_file(void** state){
   char *args[] = {"./tail", NULL};  //< arguments for tail
   g_tail_current_args = "./tail";
   tail_setup("infile");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
 
   CHECK_STDERR(!= 0, "Tail should not output to stderr, when passing no arguments");
@@ -192,7 +193,7 @@ void tail_no_file_len_arg(void** state){
   char *args[] = {"./tail", "-n3", NULL};  //< arguments for tail
   g_tail_current_args = "./tail -n3";
   tail_setup("infile");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
 
   CHECK_STDERR(!= 0, "Tail should not output to stderr, when receiving \"-n3\" as arguments");
@@ -208,7 +209,7 @@ void tail_test_n1(void** state){
   char* args[] = {"./tail", "-n", "1", "infile", NULL};
   g_tail_current_args = "./tail -n 1 infile";
   tail_setup("/dev/null");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 1 ...\"");
   
@@ -226,15 +227,16 @@ void tail_test_n0(void** state){
   char *args[] = {"./tail", "-n0", "infile", NULL};  //< arguments for tail
   g_tail_current_args = "./tail -n0 infile";
   tail_setup("/dev/null");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n0 ...\"");
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running with \"./tail -n0 ...\"");
-
-  char *args_[] = {"./tail", "-n", "0", "infile", NULL};  //< arguments for tail
+  }
+  {
+  char *args[] = {"./tail", "-n", "0", "infile", NULL};  //< arguments for tail
   g_tail_current_args = "./tail -n 0 infile";
   tail_setup("/dev/null");
-  tail_main(sizeof(args_) / sizeof(args_[0]), args_);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 0 ...\"");
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running with \"./tail -n 0 ...\"");
@@ -244,7 +246,7 @@ void tail_test_n0(void** state){
   char *args[] = {"./tail", "-n", "0", "infile", "infile1", NULL};  //< arguments for tail
   g_tail_current_args = "./tail -n0 infile infile1";
   tail_setup("/dev/null");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n0 ...\"");
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running with \"./tail -n0 ...\"");
@@ -258,7 +260,7 @@ void tail_test_multiple_files(void** state){
   char *args[] = {"./tail", "infile1", "infile2", NULL};  //< arguments for tail
   g_tail_current_args = "./tail infile1 infile2";
   tail_setup("/dev/null");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail infile1 infile2\"");
 
@@ -322,7 +324,7 @@ void tail_test_invalid_file(void** state){
   char *args[] = {"./tail", "infile", NULL};  //< arguments for tail
   g_tail_current_args = "./tail <non-existing file>";
   tail_setup("/dev/null");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(== 0, "tail did not output to stderr when running on non-existing file");
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running on non-existing file");
@@ -337,7 +339,7 @@ void tail_test_multiple_ns(void** state){
   char* args[] = {"./tail", "-n", "5", "-n2", "infile", NULL};
   g_tail_current_args = "./tail -n 5 -n2 infile";
   tail_setup("/dev/null");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(!= 0, "Tail should not output anything to stderr when running with \"./tail -n 1 ...\"");
   
@@ -351,7 +353,7 @@ void tail_test_dir(void ** state){
   char* args[] = {"./tail", ".", NULL};
   g_tail_current_args = "./tail .";
   tail_setup("/dev/null");
-  tail_main(sizeof(args) / sizeof(args[0]), args);
+  tail_main(sizeof(args) / sizeof(args[0]) - 1, args);
   tail_teardown();
   CHECK_STDERR(== 0, "tail did not output to stderr when running on directory");
   CHECK_STDOUT(!= 0, "Tail should not output anything to stdout when running on directory");
