@@ -23,8 +23,18 @@ ja to používám tak, že mám adresáře `IJC/02` a `IJC/02_tests` a v `02` li
 test: $(HTAB_OBJS) test.o
   $(CC) $(LDFLAGS) -lcmocka $^ -o $@
 ```
-`HTAB_OBJS` obsahuje všechny .o soubory pro hash table
 
-test.o nesmí být linkován s tail.o ani jiným souborem, který obsahuje funkci main.
-test.c přidává tail.c pomocí #include aby mohl změnit jméno funkce main v testech viz. tail.c:4-6
+Test nesmí být linkován s žádným .o souborem, všechny jsou "linknuté" pomocí include v `test.c`.
+To je nutné, aby byla možná změna názvu main funkce a nahrazení funkcí `malloc`, `calloc`, `realloc` a `fopen` za custom funkce.
+Toto nijak neovlivňuje kód, když je použit mimo testovací soubory.
+
+Doporučuju zkontrolovat include v test.c na řádcích 20-32 měli by obsahovat všechny soubory spojené s hash table.
+Ty můžete vypsat pomocí příkazu `ls | grep "htab.*\.[ch]$"`.
+Pokud se soubory nachází v jiném adresáři můžete použít přepínač překladače `-I`.
+
+## `test_mallocs.sh`
+
+`test_mallocs.sh` je script, který zkusí, jestli testy selžou, když některá z funkcí `malloc`, `calloc`, `realloc`, `fopen` selže a navrátí `NULL`.
+K fungování potřebuje `ltrace`, očekává, že buse spuštěný v adresáři projektu - doporučuju linknout, možná se bude měnit.
+
 

@@ -1,50 +1,52 @@
-//not needed, is removed when including, it's here just to make editor shut up
+// not needed, is removed when including, it's here just to make editor shut up
 #ifndef UNUSED
+#include <cmocka.h>
 #include <setjmp.h>
-#include <stdio.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
-#include <cmocka.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "htab.h"
 #include "htab_impl.h"
 #define UNUSED(X) (void)(X)
-#define tail_main(x, y) (void)(x); (void)(y)
+#define tail_main(x, y)                                                        \
+  (void)(x);                                                                   \
+  (void)(y)
 #define OUT_REDIRECT "lol"
 #endif
 
-//macro to access i-th element from hash table. htab is private struct, so this
-// might be different, arr_ptr in assignment 
-//NOTE: tests expect htab struct to look like this, you can change following 
-// macros if you have different names of fields
-//struct htab{
-//  size_t size;//number of htab_item
-//  size_t arr_size;//size of arr[]
-//  struct htab_item* (*arr)[];
-//};
-#define GET_ARR_PTR(table, i) (*table->arr)[i] 
+// macro to access i-th element from hash table. htab is private struct, so this
+//  might be different, arr_ptr in assignment
+// NOTE: tests expect htab struct to look like this, you can change following
+//  macros if you have different names of fields
+// struct htab{
+//   size_t size;//number of htab_item
+//   size_t arr_size;//size of arr[]
+//   struct htab_item* (*arr)[];
+// };
+#define GET_ARR_PTR(table, i) (*table->arr)[i]
 // same but for size_t size
-#define HTAB_SIZE(table) table->size 
+#define HTAB_SIZE(table) table->size
 // same but for size_t arr_size
-#define HTAB_ARR_SIZE(table) table->arr_size 
+#define HTAB_ARR_SIZE(table) table->arr_size
 
-//one htab item
+// one htab item
 #define HTAB_ITEM struct htab_item
-//how to access key in htab
+// how to access key in htab
 #define HTAB_KEY(item) item->pair.key
 
-static const char* g_htab_fails_msg;
-//used to catch segfaults
+static const char *g_htab_fails_msg;
+// used to catch segfaults
 static void htab_signal_catcher(int signo) {
   if (signo == SIGSEGV && g_htab_fails_msg != NULL)
-      printf("Received segfault when testing hash table: %s\n",
-         g_htab_fails_msg);
+    printf("Received segfault when testing hash table: %s\n", g_htab_fails_msg);
+  exit(123);
 }
 
-int htab_test_teardown(void ** state){
+int htab_test_teardown(void **state) {
   UNUSED(state);
   g_htab_fails_msg = NULL;
   return 0;
@@ -53,6 +55,8 @@ int htab_test_teardown(void ** state){
 void htab_init_test(void **state) {
   UNUSED(state);
   htab_t *tab = htab_init(10);
+  if (tab == NULL)
+    return;
   for (int i = 0; i < 10; i++) {
     assert_int_equal(GET_ARR_PTR(tab, i), NULL);
   }
@@ -60,19 +64,23 @@ void htab_init_test(void **state) {
   htab_free(tab);
 }
 
-void htab_bucket_count_test(void** state){
+void htab_bucket_count_test(void **state) {
   UNUSED(state);
   g_htab_fails_msg = "running htab_bucket_count with NULL";
   int count = htab_bucket_count(NULL);
-  if(count != 0 && count != 01)
-    fail_msg("htab_bucket_count should return 0 or -1 when passing NULL, not %d", count);
+  if (count != 0 && count != 01)
+    fail_msg(
+        "htab_bucket_count should return 0 or -1 when passing NULL, not %d",
+        count);
   htab_t *tab = htab_init(10);
+  if (tab == NULL)
+    return;
   assert_int_equal(htab_bucket_count(tab), 10);
 }
 
-void test_hash_function_test(void ** state){
-  UNUSED(state);  
-//these tests might be wrond, change to 0 to disable
+void test_hash_function_test(void **state) {
+  UNUSED(state);
+// these tests might be wrond, change to 0 to disable
 #if 1
   assert_int_equal(htab_hash_function("aa"), 6363200);
   assert_int_equal(htab_hash_function(""), 0);
@@ -80,41 +88,54 @@ void test_hash_function_test(void ** state){
 #endif
 }
 
-void test_htab_insert(void** state){
+void test_htab_insert(void **state) {
   UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
   htab_t *tab = htab_init(1);
+  if (tab == NULL)
+    return;
   char str[2];
-  for(int i = 0; i < 26; i++){
+  for (int i = 0; i < 26; i++) {
     str[0] = i + 'a';
     str[1] = '\0';
-    htab_lookup_add(tab, str)->value = 10;
+    htab_pair_t *pair = htab_lookup_add(tab, str);
+    if (pair)
+      pair->value = 10;
   }
-  for(int i = 0; i < HTAB_ARR_SIZE(tab); i++){
+  for (int i = 0; i < HTAB_ARR_SIZE(tab); i++) {
     HTAB_ITEM *item = GET_ARR_PTR(tab, i);
-    //my head hurts
-    //TODO finish
+    // my head hurts
+    // TODO finish
   }
 }
 
-void test_htab_find(void ** state){
-  UNUSED(state);  
+void test_htab_find(void **state) {
+  UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
   htab_t *tab = htab_init(1);
+  if (tab == NULL)
+    return;
   char str[3];
-  for(int i = 0; i < 2; i++)
+  for (int i = 0; i < 2; i++)
     str[i] = 'a';
   str[2] = '\0';
 
   g_htab_fails_msg = "segfault when calling htab_lookup_add";
-  htab_lookup_add(tab, "aa")->value = 10;
-  htab_lookup_add(tab, "bb")->value = 10;
-  g_htab_fails_msg = "failed to retreive key from table";
-  assert_ptr_not_equal(htab_find(tab, "aa"), NULL);
-  assert_ptr_not_equal(htab_find(tab, "bb"), NULL);
-
-  //should fail when comparing strings using ==
-  assert_ptr_not_equal(htab_find(tab, str), NULL);
+  htab_pair_t *pair = htab_lookup_add(tab, "aa");
+  if (pair) {
+    pair->value = 10;
+    g_htab_fails_msg = "failed to retreive key from table";
+    assert_ptr_not_equal(htab_find(tab, "aa"), NULL);
+    // should fail when comparing strings using ==
+    assert_ptr_not_equal(htab_find(tab, str), NULL);
+  }
+  g_htab_fails_msg = "segfault when calling htab_lookup_add";
+  pair = htab_lookup_add(tab, "bb");
+  if (pair) {
+    pair->value = 10;
+    g_htab_fails_msg = "failed to retreive key from table";
+    assert_ptr_not_equal(htab_find(tab, "bb"), NULL);
+  }
 
   g_htab_fails_msg = "failed accessing key that is not in table";
   assert_ptr_equal(htab_find(tab, "ab"), NULL);
@@ -128,47 +149,55 @@ void test_htab_find(void ** state){
   assert_ptr_equal(htab_find(NULL, "milk"), NULL);
 }
 
-void htab_hash_function_test(void ** state){
-  UNUSED(state);// cheeky touch of anarchism
+void htab_hash_function_test(void **state) {
+  UNUSED(state); // cheeky touch of anarchism
   signal(SIGSEGV, htab_signal_catcher);
   g_htab_fails_msg = "running hash_function(NULL)";
   htab_hash_function(NULL);
 }
 
-void test_htab_resize(void** state){
-  UNUSED(state);  
+void test_htab_resize(void **state) {
+  UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
   g_htab_fails_msg = "running htab_resize(NULL, num)";
   htab_resize(NULL, 0);
 
   g_htab_fails_msg = "running htab_resize(tab, 0)";
   htab_t *tab = htab_init(1);
+  if (tab == NULL)
+    return;
   htab_resize(tab, 0);
   g_htab_fails_msg = NULL;
 }
 
-void test_htab_erase(void** state){
-  UNUSED(state);  
+void test_htab_erase(void **state) {
+  UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
-  
-  //add and remove 2 elements in same and reverse order
+
+  // add and remove 2 elements in same and reverse order
 }
 
-void empty_func(htab_pair_t* pair){}
+void empty_func(htab_pair_t *pair) {}
 
-void tab_fe_help(htab_pair_t* pair){
-  if(strcmp("aa", pair->key) == 0)
+void tab_fe_help(htab_pair_t *pair) {
+  if (strcmp("aa", pair->key) == 0)
     assert_int_equal(pair->value, 10);
-  if(strcmp("bb", pair->key) == 0)
+  if (strcmp("bb", pair->key) == 0)
     assert_int_equal(pair->value, 20);
 }
 
-void test_htab_for_each(void**state){
-  UNUSED(state);  
+void test_htab_for_each(void **state) {
+  UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
   htab_t *tab = htab_init(2);
-  htab_lookup_add(tab, "aa")->value = 10;
-  htab_lookup_add(tab, "bb")->value = 20;
+  if (tab == NULL)
+    return;
+  htab_pair_t *pair = htab_lookup_add(tab, "aa");
+  if (pair)
+    pair->value = 10;
+  pair = htab_lookup_add(tab, "bb");
+  if (pair)
+    pair->value = 20;
   htab_for_each(tab, tab_fe_help);
   htab_for_each(tab, tab_fe_help);
 
@@ -182,32 +211,53 @@ void test_htab_for_each(void**state){
   htab_free(tab);
 }
 
-
-void test_htab_size(void ** state){
-  UNUSED(state);  
+void test_htab_size(void **state) {
+  UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
 
   g_htab_fails_msg = "failed when calling htab_size(NULL)";
   htab_size(NULL);
 }
 
-void test_htab_sizes(void**state){
-  UNUSED(state);  
+void test_htab_sizes(void **state) {
+  UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
   htab_t *tab = htab_init(2);
-  assert_int_equal(htab_size(tab), 0);
-  htab_lookup_add(tab, "aa")->value = 10;
-  assert_int_equal(htab_size(tab), 1);
-  htab_lookup_add(tab, "bb")->value = 20;
-  assert_int_equal(htab_size(tab), 2);
-  htab_lookup_add(tab, "bb")->value = 20;
-  assert_int_equal(htab_size(tab), 2);
+  if (tab == NULL)
+    return;
+
+  int num_items = 0;
+
+  assert_int_equal(htab_size(tab), num_items);
+  htab_pair_t *pair = htab_lookup_add(tab, "aa");
+  if (pair) {
+    pair->value = 10;
+    num_items++;
+  }
+  assert_int_equal(htab_size(tab), num_items);
+
+  int bb_inserted = 0;
+  pair = htab_lookup_add(tab, "bb");
+  if (pair) {
+    pair->value = 20;
+    num_items++;
+    bb_inserted = 1;
+  }
+  assert_int_equal(htab_size(tab), num_items);
+
+  pair = htab_lookup_add(tab, "bb");
+  if (pair && !bb_inserted) {
+    pair->value = 20;
+    num_items++;
+  }
+
+  assert_int_equal(htab_size(tab), num_items);
   htab_for_each(tab, tab_fe_help);
   htab_for_each(tab, tab_fe_help);
   htab_free(tab);
 }
 
-void test_htab_free(void** state){
+void test_htab_free(void **state) {
   UNUSED(state);
   signal(SIGSEGV, htab_signal_catcher);
   g_htab_fails_msg = "running htab_free(NULL)";

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #include "stdio.h"
 #undef _POSIX_C_SOURCE
@@ -8,6 +9,29 @@
 // change to 0 to disable tests for tail/hash table
 #define TEST_HTAB 1
 #define TEST_TAIL 1
+
+//can be set to number, which malloc should fail e.g. if it's set to 2, second
+//malloc will fail
+int MALLOC_NUM = -1;
+#include "alloc_replace.c"
+
+#if TEST_HTAB
+//include all htab sources
+#include "htab.h"
+#include "htab_bucket_count.c"
+#include "htab_clear.c"
+#include "htab_erase.c"
+#include "htab_find.c"
+#include "htab_for_each.c"
+#include "htab_free.c"
+#include "htab_hash_function.c"
+#include "htab_impl.h"
+#include "htab_init.c"
+#include "htab_lookup_add.c"
+#include "htab_resize.c"
+#include "htab_size.c"
+#endif
+
 
 #include "htab.h"
 #include "htab_impl.h"
@@ -30,6 +54,13 @@
 
 #define UNUSED(X) (void)(X)
 
+#undef malloc
+#undef free
+#undef calloc
+#undef realloc
+#undef reallocarray
+#undef fopen
+
 #if TEST_HTAB
 #include "hash_tab_tests.c"
 #endif
@@ -38,7 +69,10 @@
 #include "tail_tests.c"
 #endif
 
-int main(void) {
+int main(int argc, char** argv) {
+  if(argc > 1)
+    MALLOC_NUM = atoi(argv[1]);
+
   #if TEST_HTAB
   const struct CMUnitTest htab_tests[] = {
       cmocka_unit_test(htab_init_test),
