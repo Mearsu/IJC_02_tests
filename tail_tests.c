@@ -114,19 +114,19 @@ void tail_line_num_fail(void **state) {
   UNUSED(state);
   create_file("infile", 1, 0);
   char *args[][4] = {//different argument combinations
-  {"./tail", "-n", "10a"},
-  {"./tail", "-n", "a10"},
-  {"./tail", "-n", "a"},
-  {"./tail", "-n"},
-  {"./tail", "-n10a"},
-  {"./tail", "-na"},
-  {"./tail", "-n"},
-  {"./tail", "-n", "infile"},
-  {"./tail", "-n", "hope_this_file_doesnt_exist"},
+  {"./tail", "-n", "10a", NULL},
+  {"./tail", "-n", "a10", NULL},
+  {"./tail", "-n", "a", NULL},
+  {"./tail", "-n", NULL},
+  {"./tail", "-n10a", NULL},
+  {"./tail", "-na", NULL},
+  {"./tail", "-n", NULL},
+  {"./tail", "-n", "infile", NULL},
+  {"./tail", "-n", "hope_this_file_doesnt_exist", NULL},
   };
   g_tail_current_args = malloc(256);
 
-  for (size_t i = 0; i < sizeof(args) / sizeof(args[0]); i++) {
+  for (size_t i = 0; i < sizeof(args) / sizeof(args[0]) - 1; i++) {
     strcpy(g_tail_current_args, args[i][1]);//copy second argument for signal_catcher
     if (args[i][2] != NULL) {//copy third argument if exists
       strcat(g_tail_current_args, " ");
@@ -155,7 +155,7 @@ void tail_single_file(void **state) {
   // generate input file
   create_file("infile", 11, 0);
 
-  char *args[3] = {"./tail", "infile"};  //< arguments for tail
+  char *args[3] = {"./tail", "infile", NULL};  //< arguments for tail
   g_tail_current_args = "./tail infile"; // arguements for catching segfault
   tail_setup("/dev/null");
   tail_main(2, args);
