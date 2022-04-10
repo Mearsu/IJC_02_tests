@@ -5,24 +5,32 @@ import threading;
 import queue;
 import multiprocessing;
 
-# WIP!
-# Script for profiling wordcount, wordcount should expect file with words as 
-#first argument, AVG_LEN_MIN as second and AVG_LEN_MAX as third for this script
-# to work
+#Script for profiling wordcount.
+#wordcount should expect:
+#1st argument file with words - e.g. 50 000 lines from /usr/share/dict/words
+#name this file words or change it in this script
+#2nd argument AVG_LEN_MIN
+#3rd argument AVG_LEN_MAX
 #
-#all this script does is runs wordcount x times (defined by [repeat_time]) and 
-#averages running time
+#all this script does is it runs wordcount (by default) 2 times, times it and averages it.
+#(this is defined by [repeat_time] var).
+# AVG_LEN_MIN and MAX will be tested from 1 to [init_range] in [init_step] increments
 #
-#ANG_LEN_MAX and MIN range from 1 to [init_range]
+#by default all your cpu cores are used (defined by [num_cores]), do not set this
+#to more than is your actual number of cpu cores
 #
-#by default this script uses all cpu cores this can be changed using [num_cores],
-#should not be more than actual number of cpu cores
+#this script can take hours to finish. 
+#after some time it will print "shortest(not final):" and times with AVG MIN and MAX.
+#these values might not be 100% accurate depending on if you changed 
+#any setting and words file length
+#at the end "Final results:" is printed with 5 (more or less) shortest times.
+#these times still might not be 100% accurate because i wrote this script.
 
-#Please do not run this on merlin
+#FOR THE LOVE OF ALL THAT IS HOLY DO NOT RUN THIS ON MERLIN
 
 repeat_time = 2;
-init_range = 500
-init_step = 10;
+init_range = 1000
+init_step = 20;
 num_cores = multiprocessing.cpu_count();
 
 tt_exit = False;
@@ -93,7 +101,7 @@ def run_range(max_start, max_stop, min_start, min_stop, step):
                         if times[k][0] > data[0]:
                             times[k] = data;
                             break;
-            workLock.release();
+                timeLock.acquire();
             timeLock.release();
     while True:
         workLock.acquire();
@@ -113,6 +121,7 @@ def run_range(max_start, max_stop, min_start, min_stop, step):
                     if times[k][0] > data[0]:
                         times[k] = data;
                         break
+            timeLock.acquire();
         timeLock.release();
         time.sleep(1);
 
@@ -134,7 +143,7 @@ while step > 2:
         new_times += run_subranges(ti, int(step));
     new_times.sort(key=lambda y: y[0]);
     times = new_times[:5];
-    print("shortest:", end="");
+    print("shortest(not final):", end="");
 #    print(times, end="\r");
     print(times, end="\n");
     step /= 2;
